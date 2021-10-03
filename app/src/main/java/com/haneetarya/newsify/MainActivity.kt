@@ -3,6 +3,7 @@ package com.haneetarya.newsify
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -24,15 +25,11 @@ class MainActivity : AppCompatActivity(), NewsViewClicked {
         mAdapter = NewsListAdapter(this)
         recyclerView.adapter=mAdapter
 
-
-
-
-
     }
     private fun fetchData(){
-        val URL: String = "https://gnews.io/api/v4/top-headlines?country=in&token=88c94e649d978ca79b4fe555c87cc3ed&lang=en"
+        val URL: String = "https://newsapi.org/v2/top-headlines?country=in&apiKey=c17730ef774e483da6d02e483f8c3ea9"
 
-        val jsonObjectRequest = JsonObjectRequest(
+        val jsonObjectRequest = object:JsonObjectRequest(
             Request.Method.GET,
             URL,
             null,
@@ -42,15 +39,17 @@ class MainActivity : AppCompatActivity(), NewsViewClicked {
 
 
                 val newsJsonArray = it.getJSONArray("articles")
-                val newsArray = ArrayList<News>()
+                var newsArray = ArrayList<News>()
+
                 for(i in 0 until newsJsonArray.length()){
                     val newsJsonObject = newsJsonArray.getJSONObject(i)
                     val src :JSONObject = newsJsonObject.getJSONObject("source")
                     val news= News(
                         newsJsonObject.getString("title"),
-                        newsJsonObject.getString("image"),
+                        newsJsonObject.getString("urlToImage"),
                         src.getString("name"),
                         newsJsonObject.getString("url")
+
                     )
                     newsArray.add(news)
 
@@ -59,13 +58,20 @@ class MainActivity : AppCompatActivity(), NewsViewClicked {
 
             },
             {
+                Log.e("Newsapi error",it.toString())
                 Toast.makeText(this,"Problem Occured",Toast.LENGTH_LONG).show()
 
             }
 
 
 
-        )
+        ){
+            override fun getHeaders(): MutableMap<String, String> {
+                val headers = HashMap<String, String>()
+                headers["User-Agent"] = "Mozilla/5.0"
+                return headers
+            }
+        }
 
         MySingleton.getInstance(this).addToRequestQueue(jsonObjectRequest)
     }
